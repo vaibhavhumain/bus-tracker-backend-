@@ -19,7 +19,6 @@ const busOrderSchema = new mongoose.Schema({
         url:String,
         }
     ], 
-})
-{timestamps:true}
+},{timestamps:true})
 
 module.exports = mongoose.model('BusOrder',busOrderSchema);
