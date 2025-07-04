@@ -62,3 +62,23 @@ exports.addProgressLog = async(req,res) =>{
         res.status(500).json({error:"Failed to add progress log"});
     }
 };
+
+exports.uploadBusMedia = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url, type } = req.body;
+
+    const bus = await BusOrder.findById(id);
+    if (!bus) {
+      return res.status(404).json({ error: 'Bus not found' });
+    }
+
+    bus.media.push({ type, url });
+    await bus.save();
+
+    res.status(200).json({ success: true, bus });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to upload media' });
+  }
+};
