@@ -21,13 +21,13 @@ exports.createBusOrder = async (req,res) =>{
 exports.getAllBusOrders = async (req, res) => {
   try {
     const role = req.user.role;
-    const username = req.user.username; // we’ll inject this via JWT
+    const phone = req.user.phone;
     let buses;
 
     if (role === 'customer') {
-      buses = await BusOrder.find({ clientPhone: username });
+      buses = await BusOrder.find({ clientPhone: phone });
     } else {
-      buses = await BusOrder.find();
+      buses = await BusOrder.find(); 
     }
 
     res.status(200).json(buses);
@@ -35,6 +35,7 @@ exports.getAllBusOrders = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch bus orders" });
   }
 };
+
 exports.getBusOrderById = async(req,res)=>{
     try{
         const bus = await BusOrder.findById(req.params.id);

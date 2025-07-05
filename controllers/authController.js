@@ -39,10 +39,17 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role , username: user.username},
-      JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+  {
+    userId: user._id,
+    role: user.role,
+    username: user.username,
+    name: user.name,
+    phone: user.phone
+  },
+  JWT_SECRET,
+  { expiresIn: '1d' }
+);
+
 
     console.log("✅ Login success:", {
       token,
@@ -50,7 +57,13 @@ exports.login = async (req, res) => {
       username: user.username
     });
 
-    res.json({ token, role: user.role, username: user.username });
+    res.json({
+  token,
+  role: user.role,
+  username: user.username,
+  name: user.name,      
+  phone: user.phone   
+});
 
   } catch (err) {
     console.error("💥 Login error:", err.message);
