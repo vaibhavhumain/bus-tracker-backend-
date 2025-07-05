@@ -2,6 +2,10 @@ const BusOrder = require('../models/BusOrder');
 
 exports.createBusOrder = async (req,res) =>{
     try{
+        if(req.user.role === 'customer')
+        {
+            return res.status(403).json({error:"Access denied: only employees/admin can do"});
+        }
         if(!req.body.clientPhone)
         {
             return res.status(400).json({error:"client phone is required"});
@@ -45,6 +49,10 @@ exports.getBusOrderById = async(req,res)=>{
 
 exports.updateProgressStage = async (req,res)=>{
     try{
+        if(req.user.role === 'customer')
+        {
+            return res.status(403).json({error:"Access denied"});
+        }
         const {id} = req.params;
         const {progressStage} = req.body;
         const updatedBus = await BusOrder.findByIdAndUpdate(
@@ -63,6 +71,10 @@ exports.updateProgressStage = async (req,res)=>{
 
 exports.addProgressLog = async(req,res) =>{
     try {
+        if(req.user.role === 'customer')
+        {
+            return res.status(403).json({error:"Access denied"});
+        }
         const {id}= req.params;
         const {stage,date,remark}=req.body;
         const bus = await BusOrder.findById(id);
@@ -77,6 +89,10 @@ exports.addProgressLog = async(req,res) =>{
 
 exports.uploadBusMedia = async (req, res) => {
   try {
+    if(req.user.role === 'customer')
+        {
+            return res.status(403).json({error:"Access denied"});
+        }
     const { id } = req.params;
     const { url, type } = req.body;
 

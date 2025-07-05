@@ -6,15 +6,14 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 exports.register = async (req, res) => {
   try {
-    const { username, password, role } = req.body;
-
+    const { name, phone, username, password, role } = req.body;
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashed, role: role || 'customer' }); 
+    const user = new User({ name, phone, username, password: hashed, role: role || 'customer' }); 
     await user.save();
 
     res.status(201).json({ message: 'User registered successfully' });

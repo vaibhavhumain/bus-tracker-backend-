@@ -16,6 +16,15 @@ app.use('/api/bus',busRoutes);
 app.use('/api/auth',authRoutes); 
 app.use('/api/upload',uploadRoutes);
 
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.get('/', (req, res) => {
+  res.send('🚍 Bus Tracker API is running');
+});
+
+
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
