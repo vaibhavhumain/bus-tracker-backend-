@@ -111,3 +111,22 @@ exports.uploadBusMedia = async (req, res) => {
     res.status(500).json({ error: 'Failed to upload media' });
   }
 };
+
+exports.deleteBusOrder = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied: Only admins can delete orders' });
+    }
+
+    const { id } = req.params;
+    const deletedBus = await BusOrder.findByIdAndDelete(id);
+
+    if (!deletedBus) {
+      return res.status(404).json({ error: 'Bus order not found' });
+    }
+
+    res.status(200).json({ message: 'Bus order deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete bus order' });
+  }
+};
