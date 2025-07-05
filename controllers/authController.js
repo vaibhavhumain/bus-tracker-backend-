@@ -27,19 +27,35 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+
+    if (!user) {
+      console.log("❌ User not found");
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log("❌ Password mismatch");
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role , username: user.username},
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    console.log("✅ Login success:", {
+      token,
+      role: user.role,
+      username: user.username
+    });
+
     res.json({ token, role: user.role, username: user.username });
 
   } catch (err) {
+    console.error("💥 Login error:", err.message);
     res.status(500).json({ error: 'Login failed', details: err.message });
   }
 };
+

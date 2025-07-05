@@ -1,24 +1,36 @@
 const BusOrder = require('../models/BusOrder');
 
 exports.createBusOrder = async (req,res) =>{
-    try {
+    try{
+        if(!req.body.clientPhone)
+        {
+            return res.status(400).json({error:"client phone is required"});
+        }
         const newOrder = new BusOrder(req.body);
         await newOrder.save();
         res.status(201).json(newOrder);
     }catch(err){
         res.status(500).json({error:"Failed to create bus order"});
-    }
-};  
-
-exports.getAllBusOrders = async (req,res) =>{
-    try {
-        const buses = await BusOrder.find();
-        res.status(200).json(buses);
-    }catch(err){
-        res.status(500).json({error:"Failed to fetch bus orders"});
-    }
+    } 
 };
 
+exports.getAllBusOrders = async (req, res) => {
+  try {
+    const role = req.user.role;
+    const username = req.user.username; // we’ll inject this via JWT
+    let buses;
+
+    if (role === 'customer') {
+      buses = await BusOrder.find({ clientPhone: username });
+    } else {
+      buses = await BusOrder.find();
+    }
+
+    res.status(200).json(buses);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch bus orders" });
+  }
+};
 exports.getBusOrderById = async(req,res)=>{
     try{
         const bus = await BusOrder.findById(req.params.id);
