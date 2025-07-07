@@ -1,18 +1,39 @@
 # Node.js dependencies
 node_modules/
 
+# Firebase service account keys 🔒
+firebase/serviceAccountKey.json
+
 # Environment variables
 .env
 
 # Logs
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
 
 # OS system files
 .DS_Store
 Thumbs.db
 
+# IDE/editor folders
+.vscode/
+.idea/
+
+# Mac system files
+Icon?
+
+# Windows system files
+Desktop.ini
+
+# Coverage reports
+coverage/
+
 # Optional debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*.tgz
