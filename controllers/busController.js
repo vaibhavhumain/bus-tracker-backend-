@@ -24,9 +24,9 @@ exports.getAllBusOrders = async (req, res) => {
     let buses;
 
     if (role === 'customer') {
-      buses = await BusOrder.find({ clientPhone: phone });
+      buses = await BusOrder.find({ clientPhone: phone }).sort({ updatedAt: -1 });
     } else {
-      buses = await BusOrder.find();
+      buses = await BusOrder.find().sort({ updatedAt: -1 });
     }
 
     res.status(200).json(buses);
@@ -34,6 +34,7 @@ exports.getAllBusOrders = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch bus orders" });
   }
 };
+
 
 exports.getBusOrderById = async (req, res) => {
   try {
