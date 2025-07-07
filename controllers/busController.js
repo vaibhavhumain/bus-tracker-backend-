@@ -1,23 +1,20 @@
 const BusOrder = require('../models/BusOrder');
 const User = require('../models/User');
-const { sendNotification } = require('./notificationController');
-
-exports.createBusOrder = async (req,res) =>{
-    try{
-        if(req.user.role === 'customer')
-        {
-            return res.status(403).json({error:"Access denied: only employees/admin can do"});
-        }
-        if(!req.body.clientPhone)
-        {
-            return res.status(400).json({error:"client phone is required"});
-        }
-        const newOrder = new BusOrder(req.body);
-        await newOrder.save();
-        res.status(201).json(newOrder);
-    }catch(err){
-        res.status(500).json({error:"Failed to create bus order"});
-    } 
+const PDFDocument = require('pdfkit');
+exports.createBusOrder = async (req, res) => {
+  try {
+    if (req.user.role === 'customer') {
+      return res.status(403).json({ error: "Access denied: only employees/admin can do" });
+    }
+    if (!req.body.clientPhone) {
+      return res.status(400).json({ error: "client phone is required" });
+    }
+    const newOrder = new BusOrder(req.body);
+    await newOrder.save();
+    res.status(201).json(newOrder);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create bus order" });
+  }
 };
 
 exports.getAllBusOrders = async (req, res) => {
@@ -29,7 +26,7 @@ exports.getAllBusOrders = async (req, res) => {
     if (role === 'customer') {
       buses = await BusOrder.find({ clientPhone: phone });
     } else {
-      buses = await BusOrder.find(); 
+      buses = await BusOrder.find();
     }
 
     res.status(200).json(buses);
@@ -38,16 +35,16 @@ exports.getAllBusOrders = async (req, res) => {
   }
 };
 
-exports.getBusOrderById = async(req,res)=>{
-    try{
-        const bus = await BusOrder.findById(req.params.id);
-        if(!bus){
-            return res.status(404).json({error:"Bus not found"});
-        }
-        res.status(200).json(bus);
-    }catch(err){
-        res.status(500).json({error:"Failed to fetch bus order"});
+exports.getBusOrderById = async (req, res) => {
+  try {
+    const bus = await BusOrder.findById(req.params.id);
+    if (!bus) {
+      return res.status(404).json({ error: "Bus not found" });
     }
+    res.status(200).json(bus);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch bus order" });
+  }
 };
 
 exports.updateProgressStage = async (req, res) => {
@@ -69,23 +66,11 @@ exports.updateProgressStage = async (req, res) => {
       return res.status(404).json({ error: "Bus order not found" });
     }
 
-    const client = await User.findOne({ phone: updatedBus.clientPhone });
-    if (client?.fcmToken) {
-      await sendNotification({
-        body: `Stage changed to: ${progressStage}`,
-        title: "Bus Stage Updated",
-        token: client.fcmToken,
-        receiverId: client._id,
-        user: req.user
-      });
-    }
-
     res.status(200).json(updatedBus);
   } catch (err) {
     res.status(500).json({ error: "Failed to update bus order progress stage" });
   }
 };
-
 
 exports.addProgressLog = async (req, res) => {
   try {
@@ -99,21 +84,8 @@ exports.addProgressLog = async (req, res) => {
     const bus = await BusOrder.findById(id);
     if (!bus) return res.status(404).json({ error: "Bus order not found" });
 
-    // 🔔 Push log and save
     bus.progressLog.push({ stage, date, remark });
     await bus.save();
-
-    // 🔍 Find the client by phone
-    const client = await User.findOne({ phone: bus.clientPhone });
-    if (client?.fcmToken) {
-      await sendNotification({
-        body: `Remark: ${remark}`,
-        title: `Progress Update: ${stage}`,
-        token: client.fcmToken,
-        receiverId: client._id,
-        user: req.user  
-      });
-    }
 
     res.status(200).json(bus);
   } catch (err) {
@@ -123,10 +95,10 @@ exports.addProgressLog = async (req, res) => {
 
 exports.uploadBusMedia = async (req, res) => {
   try {
-    if(req.user.role === 'customer')
-        {
-            return res.status(403).json({error:"Access denied"});
-        }
+    if (req.user.role === 'customer') {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
     const { id } = req.params;
     const { url, type } = req.body;
 
@@ -161,5 +133,60 @@ exports.deleteBusOrder = async (req, res) => {
     res.status(200).json({ message: 'Bus order deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete bus order' });
+  }
+};
+
+
+exports.generateAndSaveBusPdf = async (req, res) => {
+  try {
+    const busId = req.params.id;
+    const bus = await BusOrder.findById(busId);
+
+    if (!bus) {
+      return res.status(404).json({ message: 'Bus not found' });
+    }
+
+    const doc = new PDFDocument();
+    const buffers = [];
+
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfData = Buffer.concat(buffers);
+
+      bus.progressPdf = pdfData;
+bus.contentType = 'application/pdf';
+await bus.save();
+
+
+      res.status(200).json({ message: 'PDF generated and saved successfully' });
+    });
+
+    // Start writing to PDF
+    doc.fontSize(20).text(`Bus Progress Report`, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(14).text(`Bus Number: ${bus.busNumber}`);
+    doc.text(`Client Name: ${bus.clientName}`);
+    doc.text(`Current Stage: ${bus.progressStage}`);
+    doc.moveDown();
+
+    doc.text(`Progress Logs:`);
+    doc.moveDown();
+
+    if (bus.progressLog && bus.progressLog.length > 0) {
+  bus.progressLog.forEach((log, i) => {
+        doc.text(`${i + 1}. Stage: ${log.stage}`);
+        doc.text(`   Remark: ${log.remark}`);
+        doc.text(`   Date: ${new Date(log.date).toLocaleDateString()}`);
+        doc.moveDown();
+      });
+    } else {
+      doc.text('No logs found.');
+    }
+
+    doc.end();
+
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
+    res.status(500).json({ message: 'Failed to generate PDF' });
   }
 };

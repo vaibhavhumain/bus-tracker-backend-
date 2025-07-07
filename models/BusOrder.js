@@ -18,7 +18,15 @@ const busOrderSchema = new mongoose.Schema({
         type:{type:String},
         url:String,
         }
+        
     ], 
+    progressPdf: {
+  type: Buffer,
+},
+contentType: {
+  type: String,
+  default: 'application/pdf',
+},
 },{timestamps:true})
 
 module.exports = mongoose.model('BusOrder',busOrderSchema);
