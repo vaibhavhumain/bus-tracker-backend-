@@ -63,7 +63,7 @@ exports.login = async (req, res) => {
 // controllers/authController.js
 exports.saveFcmToken = async (req, res) => {
   try {
-    const userId = req.user.id; // assuming you use a JWT middleware
+    const userId = req.user.userId; 
     const { fcmToken } = req.body;
 
     if (!fcmToken) return res.status(400).json({ message: "FCM token is required" });
