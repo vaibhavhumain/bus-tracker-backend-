@@ -11,6 +11,7 @@ router.post('/:id/generate-pdf',auth ,generateAndSaveBusPdf);
 
 router.get('/all',auth,getAllBusOrders);
 router.get('/:id',auth,getBusOrderById);
+router.get('/download-pdf/:id', auth, busController.downloadBusPdf);
 
 router.put('/:id/progress',auth,updateProgressStage);
 

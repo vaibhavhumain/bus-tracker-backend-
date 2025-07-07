@@ -190,3 +190,23 @@ await bus.save();
     res.status(500).json({ message: 'Failed to generate PDF' });
   }
 };
+
+exports.downloadBusPdf = async (req, res) => {
+  try {
+    const bus = await BusOrder.findById(req.params.id);
+
+    if (!bus || !bus.progressPdf) {
+      return res.status(404).json({ message: 'PDF not found for this bus' });
+    }
+
+    res.set({
+      'Content-Type': bus.contentType || 'application/pdf',
+      'Content-Disposition': 'attachment; filename=bus-progress.pdf',
+    });
+
+    res.send(bus.progressPdf);
+  } catch (error) {
+    console.error('Download PDF error:', error);
+    res.status(500).json({ message: 'Failed to download PDF' });
+  }
+};
