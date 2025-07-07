@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const { sendNotification } = require("../controllers/notificationController");
-const auth = require("../middleware/auth");
+const auth = require("../middleware/authMiddleware");
 
 router.post(
   "/send",
