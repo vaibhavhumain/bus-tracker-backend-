@@ -1,7 +1,10 @@
-// backend/routes/notificationRoutes.js
 const express = require("express");
 const router = express.Router();
-const { sendNotification } = require("../controllers/notificationController");
+const {
+  sendNotification,
+  getNotifications
+} = require("../controllers/notificationController");
+
 const auth = require("../middleware/authMiddleware");
 
 router.post(
@@ -16,5 +19,7 @@ router.post(
   },
   sendNotification
 );
+
+router.get("/", auth, getNotifications);
 
 module.exports = router;
