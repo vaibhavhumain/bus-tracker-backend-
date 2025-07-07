@@ -2,12 +2,19 @@ const messaging = require("../firebase/fireBaseAdmin");
 const Notification = require("../models/NotificationModel"); // Ensure this file exists
 
 // 🔔 Send FCM Notification and save it to DB
-exports.sendNotification = async (req, res) => {
+exports.sendNotification = async (paramsOrReq, res = null) => {
   try {
-    const { title, body, token, receiverId } = req.body;
+    const isFromController = !paramsOrReq.body; // Check if direct call
+
+    const title = isFromController ? paramsOrReq.title : paramsOrReq.body.title;
+    const body = isFromController ? paramsOrReq.body : paramsOrReq.body.body;
+    const token = isFromController ? paramsOrReq.token : paramsOrReq.body.token;
+    const receiverId = isFromController ? paramsOrReq.receiverId : paramsOrReq.body.receiverId;
+    const user = isFromController ? paramsOrReq.user : paramsOrReq.user;
 
     if (!token || !title || !body) {
-      return res.status(400).json({ message: "Token, title, and body are required" });
+      if (res) return res.status(400).json({ message: "Token, title, and body are required" });
+      return;
     }
 
     const message = {
@@ -17,22 +24,22 @@ exports.sendNotification = async (req, res) => {
 
     const response = await messaging.send(message);
 
-    // ✅ Save notification to DB
     await Notification.create({
       title,
       body,
-      sentBy: req.user._id,
+      sentBy: user._id,
       sentToToken: token,
       sentToUser: receiverId || null,
       createdAt: new Date(),
     });
 
-    res.status(200).json({ message: "Notification sent", response });
+    if (res) res.status(200).json({ message: "Notification sent", response });
   } catch (error) {
     console.error("FCM Error:", error);
-    res.status(500).json({ message: "Failed to send notification", error: error.message });
+    if (res) res.status(500).json({ message: "Failed to send notification", error: error.message });
   }
 };
+
 
 // 📥 Get all notifications for the logged-in user
 exports.getNotifications = async (req, res) => {

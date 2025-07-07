@@ -1,4 +1,6 @@
 const BusOrder = require('../models/BusOrder');
+const User = require('../models/User');
+const { sendNotification } = require('./notificationController');
 
 exports.createBusOrder = async (req,res) =>{
     try{
@@ -48,44 +50,75 @@ exports.getBusOrderById = async(req,res)=>{
     }
 };
 
-exports.updateProgressStage = async (req,res)=>{
-    try{
-        if(req.user.role === 'customer')
-        {
-            return res.status(403).json({error:"Access denied"});
-        }
-        const {id} = req.params;
-        const {progressStage} = req.body;
-        const updatedBus = await BusOrder.findByIdAndUpdate(
-            id,
-            {progressStage},
-            {new:true}
-        );
-        if(!updatedBus){
-            return res.status(404).json({error:"Bus order not found"});
-        }
-        res.status(200).json(updatedBus);
-    }catch(err){
-        res.status(500).json({error:"Failed to update bus order progress stage"});
+exports.updateProgressStage = async (req, res) => {
+  try {
+    if (req.user.role === 'customer') {
+      return res.status(403).json({ error: "Access denied" });
     }
+
+    const { id } = req.params;
+    const { progressStage } = req.body;
+
+    const updatedBus = await BusOrder.findByIdAndUpdate(
+      id,
+      { progressStage },
+      { new: true }
+    );
+
+    if (!updatedBus) {
+      return res.status(404).json({ error: "Bus order not found" });
+    }
+
+    const client = await User.findOne({ phone: updatedBus.clientPhone });
+    if (client?.fcmToken) {
+      await sendNotification({
+        body: `Stage changed to: ${progressStage}`,
+        title: "Bus Stage Updated",
+        token: client.fcmToken,
+        receiverId: client._id,
+        user: req.user
+      });
+    }
+
+    res.status(200).json(updatedBus);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update bus order progress stage" });
+  }
 };
 
-exports.addProgressLog = async(req,res) =>{
-    try {
-        if(req.user.role === 'customer')
-        {
-            return res.status(403).json({error:"Access denied"});
-        }
-        const {id}= req.params;
-        const {stage,date,remark}=req.body;
-        const bus = await BusOrder.findById(id);
-        if(!bus) return res.status(404).json({error:"Bus order not found"});
-        bus.progressLog.push({stage,date,remark});
-        await bus.save();
-        res.status(200).json(bus);
-    }catch(err){
-        res.status(500).json({error:"Failed to add progress log"});
+
+exports.addProgressLog = async (req, res) => {
+  try {
+    if (req.user.role === 'customer') {
+      return res.status(403).json({ error: "Access denied" });
     }
+
+    const { id } = req.params;
+    const { stage, date, remark } = req.body;
+
+    const bus = await BusOrder.findById(id);
+    if (!bus) return res.status(404).json({ error: "Bus order not found" });
+
+    // 🔔 Push log and save
+    bus.progressLog.push({ stage, date, remark });
+    await bus.save();
+
+    // 🔍 Find the client by phone
+    const client = await User.findOne({ phone: bus.clientPhone });
+    if (client?.fcmToken) {
+      await sendNotification({
+        body: `Remark: ${remark}`,
+        title: `Progress Update: ${stage}`,
+        token: client.fcmToken,
+        receiverId: client._id,
+        user: req.user  
+      });
+    }
+
+    res.status(200).json(bus);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add progress log" });
+  }
 };
 
 exports.uploadBusMedia = async (req, res) => {
