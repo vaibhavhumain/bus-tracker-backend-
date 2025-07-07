@@ -3,6 +3,8 @@ node_modules/
 
 # Firebase service account keys 🔒
 firebase/serviceAccountKey.json
+firebase/fireBaseAdmin.js
+
 
 # Environment variables
 .env
